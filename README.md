@@ -1,2 +1,1 @@
-This is my attempt at the Advent of Code 2023.
-I'll try to do it with TypeScript, as I want to enhance my typesafety skills here.
+To access the Advent of Code API for the inputs, your Session Cookie needs to be set in the .env - File as AOC_TOKEN="session=...".
