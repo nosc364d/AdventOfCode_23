@@ -1,22 +1,4 @@
-const dotenv = require("dotenv");
-
-dotenv.config();
-
-async function getData(): Promise<string> {
-  const res = await fetch("https://adventofcode.com/2023/day/1/input", {
-    credentials: "include",
-    headers: {
-      Cookie: process.env["AOC_TOKEN"], // AOC needs verification to fetch safely
-    },
-  });
-
-  if (!res.ok) {
-    console.error(res.status + " " + res.statusText);
-    return null;
-  }
-
-  return res.text();
-}
+import { getData } from "../../lib/data";
 
 async function handleDigits() {
   // prepare data
@@ -118,6 +100,6 @@ async function handleText() {
   }
 }
 
-// handleDigits();
+handleDigits();
 
 handleText();
