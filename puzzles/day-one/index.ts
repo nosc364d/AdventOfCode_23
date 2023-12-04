@@ -61,26 +61,55 @@ async function handleText() {
 
     var sum = 0;
 
-    const numericDigit = new RegExp("([0-9])");
+    const digits = [
+      "zero",
+      "one",
+      "two",
+      "three",
+      "four",
+      "five",
+      "six",
+      "seven",
+      "eight",
+      "nine",
+    ];
+
+    const digitText = new RegExp(`(?=(${digits.join("|")}|[0-9]))`);
+
+    const digitLast = new RegExp(
+      `(?=.*(${digits.join("|")}|[0-9]))` // using positive lookahead (?=...) to catch overlapping ones
+      // the .* consumes everything but the last match
+    );
 
     lines.map((el) => {
-      const matchFirst = Array.from(el).filter((char) =>
-        char.match(numericDigit)
-      )[0];
-      const matchLast = Array.from(el)
-        .toReversed() // reverse to get last
-        .filter((char) => char.match(numericDigit))[0];
+      if (el !== "") {
+        // last line will be an empty line, so be wary
 
-      // edge case: last line is empty, so to not get a NaN
-      // we check that there are proper values in there
-      // else we add 0
+        // get the matches
+        const matchFirst = el.match(digitText);
+        const matchLast = el.match(digitLast);
 
-      var concat = "0";
-      if (matchFirst && matchLast) {
-        concat = matchFirst + matchLast;
+        // convert found number to numeric expression
+        var resultFirst = digits
+          .findIndex((el) => el === matchFirst[1])
+          .toString();
+        var resultLast = digits
+          .findIndex((el) => el === matchLast[1])
+          .toString();
+
+        // the match was not a numeric value, so go for the string that was actually found
+        if (resultFirst === "-1") {
+          resultFirst = matchFirst[1];
+        }
+
+        if (resultLast === "-1") {
+          resultLast = matchLast[1];
+        }
+
+        const concat = resultFirst + resultLast;
+
+        sum += Number(concat);
       }
-
-      sum += Number(concat);
     });
 
     console.log(sum);
@@ -89,6 +118,6 @@ async function handleText() {
   }
 }
 
-handleDigits();
+// handleDigits();
 
 handleText();
