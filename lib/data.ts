@@ -1,9 +1,9 @@
-const dotenv = require("dotenv");
+import dotenv from "dotenv";
 
 dotenv.config();
 
-export async function getData(): Promise<string> {
-  const res = await fetch("https://adventofcode.com/2023/day/1/input", {
+export async function getData(day: string): Promise<string> {
+  const res = await fetch(`https://adventofcode.com/2023/day/${day}/input`, {
     credentials: "include",
     headers: {
       Cookie: process.env["AOC_TOKEN"], // AOC needs verification to fetch safely

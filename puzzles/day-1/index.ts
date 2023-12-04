@@ -2,7 +2,7 @@ import { getData } from "../../lib/data";
 
 async function handleDigits() {
   // prepare data
-  const data = await getData();
+  const data = await getData("1");
   if (data) {
     const lines = data.split("\n");
 
@@ -37,7 +37,7 @@ async function handleDigits() {
 
 async function handleText() {
   // prepare data
-  const data = await getData();
+  const data = await getData("1");
   if (data) {
     const lines = data.split("\n");
 
