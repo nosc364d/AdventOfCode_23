@@ -16,7 +16,17 @@ function popRegEx(regex: RegExpMatchArray): string {
   );
 }
 
-function pushAllOccurencesInLine(line: string, regex: RegExp, found: any[]) {
+function generateKey(line: number, index: number): string {
+  return line.toString().padStart(3, "0") + index.toString().padStart(3, "0");
+}
+
+function pushAllOccurencesInLine(
+  line: string,
+  regex: RegExp,
+  found: any[],
+  specialTrack?: Object,
+  currLine?: number
+) {
   var match = line.match(regex);
 
   var lineIndex = 0;
@@ -33,7 +43,16 @@ function pushAllOccurencesInLine(line: string, regex: RegExp, found: any[]) {
         endPos: lineIndex + match[0].length - 1,
       });
     } else if (match[0][0] !== ".") {
+      // sonderzeichen
       found.push(match.index + lineIndex);
+      if (specialTrack && match[0] === "*") {
+        const key = generateKey(currLine, match.index + lineIndex);
+
+        // create new gear if necessary
+        if (!(key in specialTrack)) {
+          specialTrack[key] = [];
+        }
+      }
     }
 
     const splitLine = popRegEx(match);
@@ -127,12 +146,117 @@ export async function task1() {
           // but gotta get to it first
         }
       });
-
-      // now got a list of possible special positions
     }
   });
 
   console.log(sum);
 }
 
-task1();
+export async function task2() {
+  const data = await getData("3");
+  const lines = data.split("\n");
+
+  // every line consists of 140 chars
+  // possible special chars: * # $ + & % @
+  var sum = 0;
+
+  var gears = {}; // save all gears in object to match keys
+
+  lines.map((line, index) => {
+    if (line !== "") {
+      // init data structs
+
+      var lowerSpecials: number[] = [];
+      const lowerLine = lines[index - 1];
+      var specials: number[] = [];
+      var higherSpecials: number[] = [];
+      const higherLine = lines[index + 1];
+
+      var foundNums: numberData[] = [];
+
+      pushAllOccurencesInLine(line, wholeNums, foundNums);
+
+      // find all occurences of specials chars and save their positions in the specials Array
+      pushAllOccurencesInLine(line, specialChars, specials, gears, index);
+
+      if (lowerLine) {
+        pushAllOccurencesInLine(
+          lowerLine,
+          specialChars,
+          lowerSpecials,
+          gears,
+          index - 1
+        );
+      }
+
+      if (higherLine) {
+        pushAllOccurencesInLine(
+          higherLine,
+          specialChars,
+          higherSpecials,
+          gears,
+          index + 1
+        );
+      }
+
+      foundNums.map((number) => {
+        for (
+          var i = 0;
+          i <
+          Math.max(
+            lowerSpecials.length,
+            specials.length,
+            higherSpecials.length
+          );
+          i++
+        ) {
+          if (isInRange(specials[i], number.startPos - 1, number.endPos + 1)) {
+            const key = generateKey(index, specials[i]);
+            if (gears[key]) {
+              gears[generateKey(index, specials[i])].push(number.value);
+            }
+          } else if (
+            isInRange(lowerSpecials[i], number.startPos - 1, number.endPos + 1)
+          ) {
+            const key = generateKey(index - 1, lowerSpecials[i]);
+            if (gears[key]) {
+              gears[generateKey(index - 1, lowerSpecials[i])].push(
+                number.value
+              );
+            }
+          } else if (
+            isInRange(higherSpecials[i], number.startPos - 1, number.endPos + 1)
+          ) {
+            const key = generateKey(index + 1, higherSpecials[i]);
+            if (gears[key]) {
+              gears[generateKey(index + 1, higherSpecials[i])].push(
+                number.value
+              );
+            }
+          }
+
+          if (
+            specials[i] > number.endPos + 1 &&
+            lowerSpecials[i] > number.endPos + 1 &&
+            higherSpecials[i] > number.endPos + 1
+          )
+            break; // no need to check for anything outta after the interesting part
+          // but gotta get to it first
+        }
+      });
+    }
+  });
+
+  Object.values(gears).map((value: number[]) => {
+    if (value.length === 2) {
+      sum += value.reduce(
+        (accumulator, currentValue) => accumulator * currentValue
+      );
+    }
+  });
+
+  console.log(sum);
+}
+
+// task1()
+task2();
