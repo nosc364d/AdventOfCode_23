@@ -56,8 +56,10 @@ function pushAllOccurencesInLine(
     }
 
     const splitLine = popRegEx(match);
+    // update how many characters got removed so that the popped items wont mess up the position
     lineIndex += match[0].length;
     match = splitLine.match(regex);
+    // that is done so umständlich bc i didnt know how else to get the position of the match
   }
 }
 
@@ -106,12 +108,8 @@ export async function task1() {
         pushAllOccurencesInLine(higherLine, specialChars, higherSpecials);
       }
 
-      console.log(lowerSpecials);
-      console.log(specials);
-      console.log(higherSpecials);
-      console.log(foundNums);
-
       foundNums.map((number) => {
+        // check for every sonderzeichen whether is adjacent to number
         for (
           var i = 0;
           i <
@@ -210,9 +208,12 @@ export async function task2() {
           );
           i++
         ) {
+          // this could be refactored to avoid code duplication
           if (isInRange(specials[i], number.startPos - 1, number.endPos + 1)) {
             const key = generateKey(index, specials[i]);
+            // checks, that it's a star
             if (gears[key]) {
+              // it is, so we'll add the number found
               gears[generateKey(index, specials[i])].push(number.value);
             }
           } else if (
