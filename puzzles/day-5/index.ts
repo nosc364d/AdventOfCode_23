@@ -79,55 +79,100 @@ export async function task2() {
   for (var i = 0; i < seedsAsNums.length; i += 2) {
     intervals.push({
       start: seedsAsNums[i],
-      end: seedsAsNums[i + 1],
+      end: seedsAsNums[i] + seedsAsNums[i + 1],
     });
   }
 
-  const lines = testData.split("\n");
+  intervals.sort((a, b) => a.start - b.start);
+  // slice to copy contents, not refereence
+  var copy: Interval[] = intervals.slice();
 
-  var check = true;
-  var currentLowestResult = seedsAsNums[0];
+  const lines = testData.split("\n");
+  // remove first items cuz we already took care of that earlier
+  lines.shift();
+
+  lines.map((line) => {
+    if (line.match(/[a-z]/)) {
+      // line starts with a letter: declares start of new mapping
+      // sort bc it gives me a better feeling
+      intervals.sort((a, b) => a.start - b.start);
+      copy = intervals.slice();
+      console.log("thing done:");
+      console.log(intervals);
+    } else if (line.match(/[0-9]/)) {
+      // line is mapping
+      const mapping = line.split(" ");
+
+      const dst = Number(mapping[0]);
+      const src = Number(mapping[1]);
+      const range = Number(mapping[2]);
+
+      console.log(line);
+      console.log("found interval: " + src + ", " + (src + range));
+      // check cases
+      for (var currInterval = 0; currInterval < copy.length; currInterval++) {
+        // is current mapping relevant for interval?
+        // meaning is either start or end in interval?
+        const startInRange = isInRange(
+          copy[currInterval].start,
+          src,
+          src + range
+        );
+        const endInRange = isInRange(copy[currInterval].end, src, src + range);
+        if (startInRange) {
+          // yes it is ! now we gotta handle it
+
+          console.log("found start in range: " + copy[currInterval].start);
+
+          if (endInRange) {
+            // interval fully in current mapping
+            console.log("interval is fully in range, mapping whole entry");
+            intervals[currInterval] = {
+              start: dst + (copy[currInterval].start - src),
+              end: dst + (copy[currInterval].end - src),
+            };
+            console.log(intervals);
+          } else {
+            // only start in mapping: need to split!
+            // pushing the mapped part
+            console.log("creating new entry");
+            intervals.push({
+              start: copy[currInterval].start + (dst - src),
+              end: dst + range,
+            });
+            // returning the stable part
+            intervals[currInterval] = {
+              start: src + range + 1,
+              end: copy[currInterval].end,
+            };
+            console.log("after line:");
+            console.log(intervals);
+            console.log(copy);
+          }
+        } else if (endInRange) {
+          // it still is! still gotta split it
+          // puhsing the split part
+          console.log("end in range only, creating new entry");
+          intervals.push({
+            start: dst,
+            end: copy[currInterval].end + (dst - src),
+          });
+          // returning the stable part
+          intervals[currInterval] = {
+            start: copy[currInterval].start,
+            end: src - 1,
+          };
+          console.log("after line:");
+          console.log(intervals);
+        }
+        // not in range, no need to modify it
+      }
+    }
+  });
 
   // for every seed, go through every line and do all the mappings until location
-  for (var seedIndex = 0; seedIndex < seedsAsNums.length; seedIndex += 2) {
-    for (
-      var thisSeeds = 0;
-      thisSeeds < seedsAsNums[seedIndex + 1];
-      thisSeeds++
-    ) {
-      var currentNum = seedsAsNums[seedIndex] + thisSeeds;
-      // console.log(currentNum);
-      lines.map((line) => {
-        if (line.match(/[0-9]/)) {
-          // line is a number
-          const mapping = line.split(" ");
-          // console.log(mapping);
-          if (mapping[0] !== "seeds:" && check) {
-            // assign the mapping results for better readability
-            // we're not golfing here
-            const dst = Number(mapping[0]);
-            const src = Number(mapping[1]);
-            const range = Number(mapping[2]);
-            // only if number is in range, do the mapping
-            if (isInRange(currentNum, src, src + range)) {
-              // console.log("mapping for " + seedsAsNums[seedIndex]);
-              // console.log("found in range from " + src + " to " + (src + range));
-              // console.log("now " + (dst + (seedsAsNums[seedIndex] - src)));
-              currentNum = dst + (currentNum - src);
-              // console.log("now: " + currentNum);
-              check = false;
-            }
-          }
-        } else {
-          check = true;
-        }
-      });
-      if (currentLowestResult > currentNum) currentLowestResult = currentNum;
-    }
-    console.log(seedIndex + " seed done");
-  }
 
-  console.log(currentLowestResult);
+  console.log(intervals);
 }
 
 task2();
