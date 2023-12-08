@@ -4,6 +4,73 @@ function isInRange(toTest: number, start: number, end: number): boolean {
   return start <= toTest && toTest <= end;
 }
 
+function mergeAndSort(intervals: Interval[]) {
+  var currEntry = 0;
+  intervals.sort((a, b) => a.start - b.start);
+
+  console.log("before merging:");
+  console.log(intervals.length + " amount of intervals");
+
+  console.log("merging...");
+
+  // merge
+  while (intervals[currEntry + 1]) {
+    if (isInRange(intervals[1].start, intervals[0].start, intervals[0].end)) {
+      // next interval is in range of the first -> merge
+      intervals.push({
+        start: intervals[0].start,
+        end:
+          // choose the longer one
+          intervals[0].end < intervals[1].end
+            ? intervals[1].end
+            : intervals[0].end,
+      });
+
+      console.log(
+        "merged: [ " +
+          intervals[0].start +
+          " , " +
+          (intervals[0].end < intervals[1].end
+            ? intervals[1].end
+            : intervals[0].end) +
+          " ]"
+      );
+
+      // remove the old ones
+      intervals.shift();
+      intervals.shift();
+
+      // need to sort again and reset
+      intervals.sort((a, b) => a.start - b.start);
+      currEntry = 0;
+    } else if (intervals[0].end + 1 === intervals[1].start) {
+      // next is fließender übergang, so merge that too
+      intervals.push({
+        start: intervals[0].start,
+        end: intervals[1].end,
+      });
+      intervals.shift();
+
+      // sort again & reset the loop
+      intervals.sort((a, b) => a.start - b.start);
+      currEntry = 0;
+    } else {
+      intervals.push({
+        start: intervals[0].start,
+        end: intervals[0].end,
+      });
+
+      intervals.shift();
+      // nothing to be merged:
+      currEntry++;
+    }
+  }
+  intervals.sort((a, b) => a.start - b.start);
+  console.log("result:");
+  console.log(intervals.length + " amount of intervals");
+  console.log(intervals);
+}
+
 // export async function task1() {
 //   const data = await getData("5");
 
@@ -68,7 +135,7 @@ export async function task2() {
 
   const seedRegex = /^seeds:\s(?<seed>.+)/; // regex syntax copied from tlareg on github
 
-  const seeds = testData.match(seedRegex)[1].split(" ");
+  const seeds = data.match(seedRegex)[1].split(" ");
   var seedsAsNums: number[] = [];
   seeds.map((seed) => {
     seedsAsNums.push(Number(seed));
@@ -79,15 +146,16 @@ export async function task2() {
   for (var i = 0; i < seedsAsNums.length; i += 2) {
     intervals.push({
       start: seedsAsNums[i],
-      end: seedsAsNums[i] + seedsAsNums[i + 1],
+      end: seedsAsNums[i] + seedsAsNums[i + 1] - 1,
     });
   }
 
   intervals.sort((a, b) => a.start - b.start);
+
   // slice to copy contents, not refereence
   var copy: Interval[] = intervals.slice();
 
-  const lines = testData.split("\n");
+  const lines = data.split("\n");
   // remove first items cuz we already took care of that earlier
   lines.shift();
 
@@ -96,9 +164,12 @@ export async function task2() {
       // line starts with a letter: declares start of new mapping
       // sort bc it gives me a better feeling
       intervals.sort((a, b) => a.start - b.start);
+      console.log("mapping for all done!");
+
+      // the merging should not be necessary much but it makes debugging much easier
+      mergeAndSort(intervals);
+
       copy = intervals.slice();
-      console.log("thing done:");
-      console.log(intervals);
     } else if (line.match(/[0-9]/)) {
       // line is mapping
       const mapping = line.split(" ");
@@ -107,8 +178,6 @@ export async function task2() {
       const src = Number(mapping[1]);
       const range = Number(mapping[2]);
 
-      console.log(line);
-      console.log("found interval: " + src + ", " + (src + range));
       // check cases
       for (var currInterval = 0; currInterval < copy.length; currInterval++) {
         // is current mapping relevant for interval?
@@ -116,43 +185,38 @@ export async function task2() {
         const startInRange = isInRange(
           copy[currInterval].start,
           src,
-          src + range
+          src + range - 1
         );
-        const endInRange = isInRange(copy[currInterval].end, src, src + range);
+        const endInRange = isInRange(
+          copy[currInterval].end,
+          src,
+          src + range - 1
+        );
         if (startInRange) {
           // yes it is ! now we gotta handle it
 
-          console.log("found start in range: " + copy[currInterval].start);
-
           if (endInRange) {
             // interval fully in current mapping
-            console.log("interval is fully in range, mapping whole entry");
             intervals[currInterval] = {
               start: dst + (copy[currInterval].start - src),
               end: dst + (copy[currInterval].end - src),
             };
-            console.log(intervals);
           } else {
             // only start in mapping: need to split!
             // pushing the mapped part
-            console.log("creating new entry");
             intervals.push({
               start: copy[currInterval].start + (dst - src),
-              end: dst + range,
+              end: dst + range - 1,
             });
             // returning the stable part
             intervals[currInterval] = {
-              start: src + range + 1,
+              start: src + range,
               end: copy[currInterval].end,
             };
-            console.log("after line:");
-            console.log(intervals);
-            console.log(copy);
           }
         } else if (endInRange) {
           // it still is! still gotta split it
           // puhsing the split part
-          console.log("end in range only, creating new entry");
           intervals.push({
             start: dst,
             end: copy[currInterval].end + (dst - src),
@@ -162,16 +226,47 @@ export async function task2() {
             start: copy[currInterval].start,
             end: src - 1,
           };
-          console.log("after line:");
-          console.log(intervals);
+        } else if (
+          isInRange(src, copy[currInterval].start, copy[currInterval].end) &&
+          isInRange(
+            src + range - 1,
+            copy[currInterval].start,
+            copy[currInterval].end
+          )
+        ) {
+          // mapping is in interval
+          // push first stable
+          intervals.push({
+            start: copy[currInterval].start,
+            end: src - 1,
+          });
+
+          // push mapped part
+          intervals.push({
+            start: dst,
+            end: dst + range - 1,
+          });
+
+          // leave only second stable behind
+          intervals[currInterval] = {
+            start: src + range,
+            end: copy[currInterval].end,
+          };
+
+          // still need to check second stable
+          copy.push({
+            start: src + range,
+            end: copy[currInterval].end,
+          });
         }
-        // not in range, no need to modify it
+        // still need to check if theres an interval start in between the range
       }
     }
   });
 
   // for every seed, go through every line and do all the mappings until location
 
+  mergeAndSort(intervals);
   console.log(intervals);
 }
 
