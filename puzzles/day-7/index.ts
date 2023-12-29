@@ -146,6 +146,7 @@ async function task2() {
           occurences[char]++;
         } else occurences[char] = 1;
       }
+      // pay attention to J now so that it can be
       if (mapping[char]) {
         handWithNums.push(mapping[char]);
       } else {
@@ -155,7 +156,8 @@ async function task2() {
 
     // console.log(Object.values(occurences));
 
-    // fill occurences
+    // fill occurences with J specials => add to the one theres most of
+    // how many jokers are available?
     const numOfNormalCards =
       Object.values(occurences).length > 0
         ? Number(
@@ -165,6 +167,7 @@ async function task2() {
           )
         : 0;
     if (numOfNormalCards < 5) {
+      // if there are jokers, where do we gotta add them?
       const max = Math.max(...Object.values(occurences));
       // using some so we can break outta the map with return:true once we found the max
       Object.entries(occurences).some((card) => {
@@ -210,7 +213,7 @@ async function task2() {
   var rank = 1;
   const listOfHands = Object.values(kindsOfHands);
 
-  // make all arrays into 1 and map
+  // go through every hand and do bet + rank logic
   for (var i = 6; i >= 0; i--) {
     // go through every kind, starting with last
     if (listOfHands[i].length > 0) {
