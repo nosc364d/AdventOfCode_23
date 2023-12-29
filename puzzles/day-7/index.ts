@@ -1,5 +1,11 @@
 import { getData } from "../../lib/data";
 
+function sortForElements(a: number[], b: number[]): number {
+  for (var i = 0; i < 5; i++) {
+    if (a[i] !== b[i]) return a[i] - b[i];
+  }
+}
+
 export async function task1() {
   const data = await getData("7");
   const testdata = "32T3K 765\nT55J5 684\nKK677 28\nKTJJT 220\nQQQJA 483";
@@ -74,20 +80,23 @@ export async function task1() {
 
   // sort object
   Object.values(kindsOfHands).map((listOfHands) => {
-    listOfHands.sort();
+    listOfHands.sort((a, b) => sortForElements(a, b));
   });
 
+  var rank = 1;
+  const listOfHands = Object.values(kindsOfHands);
   console.log(Object.values(kindsOfHands));
 
   // make all arrays into 1 and map
-  Object.values(kindsOfHands).map((hands) => {
-    if (hands.length > 0) {
-      hands.map((hand) => {
-        result += numOfHands * Number(hand[5]);
-        numOfHands--;
+  for (var i = 6; i >= 0; i--) {
+    // go through every kind, starting with last
+    if (listOfHands[i].length > 0) {
+      listOfHands[i].map((hand) => {
+        result += rank * Number(hand[5]);
+        rank++;
       });
     }
-  });
+  }
 
   console.log(result);
 }
